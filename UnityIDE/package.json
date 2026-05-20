@@ -1,0 +1,16 @@
+{
+  "name": "com.gamiable.unity-ide",
+  "displayName": "IDE Editor",
+  "description": "The IDE Editor package provides an integration for using VS Code, Cursor, Windsurf, Antigravity, Zed, Sublime Text, Neovim and other editors for Unity. It adds support for generating .csproj files for code completion and auto-discovery of installations.",
+  "version": "0.0.1",
+  "unity": "2021.3",
+  "dependencies": {},
+  "_upm": {
+    "changelog": "Extended to support Zed, Sublime Text, Neovim; .csproj/.sln generation; file opening via --goto; .nvproj generation"
+  },
+  "repository": {
+    "url": "",
+    "type": "git",
+    "revision": ""
+  }
+}
