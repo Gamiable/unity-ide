@@ -1,0 +1,30 @@
+return {
+	features = {
+		csharp = true,
+		debug = false,
+	},
+	exclude = {
+		files = {
+			".gitmodules", "*.meta",
+			"*.booproj", "*.pidb", "*.suo",
+			"*.user", "*.userprefs", "*.unityproj",
+			"*.dll", "*.exe", "*.so", "*.a", "*.bundle",
+			"*.pdf", "*.mid", "*.midi", "*.wav",
+			"*.gif", "*.ico", "*.jpg", "*.jpeg", "*.png",
+			"*.psd", "*.tga", "*.tif", "*.tiff",
+			"*.3ds", "*.3DS", "*.fbx", "*.FBX",
+			"*.lxo", "*.LXO", "*.ma", "*.MA",
+			"*.obj", "*.OBJ", "*.ttf",
+			"*.cubemap", "*.flare", "*.mat",
+			"*.prefab", "*.unity", "*.mdb", "*.blend",
+			"*.csproj", "*.sln",
+		},
+		dirs = {
+			"build", "Build",
+			"library", "Library",
+			"obj", "Obj",
+			"temp", "Temp",
+			"ProjectSettings", "Logs",
+		},
+	},
+}
