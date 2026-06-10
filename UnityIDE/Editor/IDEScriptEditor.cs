@@ -357,6 +357,25 @@ namespace Packages.IDE.Editor
 					return openProc?.ExitCode == 0;
 				}
 
+				if (ExecutableStartsWithAny(editorPath, "zed"))
+				{
+					if (!string.IsNullOrEmpty(trimmedPath))
+					{
+						var absolutePath = Path.Combine(projectDir, trimmedPath);
+						var fileArg = line > 0
+							? column > 0
+								? $"\"{absolutePath}:{line}:{column}\""
+								: $"\"{absolutePath}:{line}\""
+							: $"\"{absolutePath}\"";
+						Process.Start(editorPath, fileArg);
+					}
+					else
+					{
+						Process.Start(editorPath, $"\"{projectDir}\"");
+					}
+					return true;
+				}
+
 				var arguments = $"\"{projectDir}\"";
 				if (hasGoto)
 				{
@@ -375,8 +394,12 @@ namespace Packages.IDE.Editor
 				Debug.LogWarning($"Failed to open file in IDE editor: {e.Message}");
 				try
 				{
-					EditorUtility.OpenWithDefaultApp(filePath);
-					return true;
+					if (!string.IsNullOrEmpty(filePath))
+					{
+						EditorUtility.OpenWithDefaultApp(filePath);
+						return true;
+					}
+					return false;
 				}
 				catch
 				{
