@@ -8,6 +8,11 @@
   "_upm": {
     "changelog": "Extended to support Zed, Neovim; .csproj/.sln generation; file opening via --goto; .nvproj generation"
   },
+  "author": {
+    "name": "Gamiable",
+    "email": "dev@gamiable.com",
+    "url": "https://gamiable.com"
+  },
   "repository": {
     "url": "",
     "type": "git",
