@@ -87,6 +87,30 @@ namespace Packages.IDE.Editor
 			catch { return path; }
 		}
 
+		/// <summary>
+		/// For VS Code-based editors, prefer the CLI script (.cmd) over the executable (.exe).
+		/// The .cmd script exits immediately after launching the GUI, preventing Unity from
+		/// blocking on WaitForExit when it launches the editor directly.
+		/// </summary>
+		internal static string GetPreferredEditorPath(string path)
+		{
+			if (string.IsNullOrEmpty(path) || !path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+				return path;
+
+			var editorDir = Path.GetDirectoryName(path);
+			if (editorDir == null) return path;
+
+			var binDir = Path.Combine(editorDir, "bin");
+			if (!Directory.Exists(binDir)) return path;
+
+			foreach (var cmdFile in Directory.GetFiles(binDir, "*.cmd"))
+			{
+				return cmdFile;
+			}
+
+			return path;
+		}
+
 		public IDEScriptEditor(IDiscovery discovery, IGenerator projectGeneration)
 		{
 			m_Discoverability = discovery;
@@ -296,20 +320,25 @@ namespace Packages.IDE.Editor
 			{
 				var projectDir = Directory.GetParent(Application.dataPath).FullName;
 				var trimmedPath = filePath?.Trim();
-				var hasGoto = !string.IsNullOrEmpty(trimmedPath) && line > 0;
+				var hasFile = !string.IsNullOrEmpty(trimmedPath);
+				var hasGoto = hasFile && line > 0;
 
 				if (editorPath.EndsWith(".app", StringComparison.OrdinalIgnoreCase))
 				{
 					if (ExecutableStartsWithAny(editorPath, "neovim", "nv"))
 					{
 						var executablePath = GetMacExecutablePath(editorPath);
-						var args = $"\"{projectDir}\"";
+						var args = $"\"{projectDir}\" --reuse-window";
 						if (hasGoto)
 						{
 							var gotoArg = column > 0
 								? $"\"{trimmedPath}:{line}:{column}\""
 								: $"\"{trimmedPath}:{line}\"";
 							args += $" --goto {gotoArg}";
+						}
+						else if (hasFile)
+						{
+							args += $" --goto \"{trimmedPath}\"";
 						}
 
 						var proc = Process.Start(executablePath, args);
@@ -376,7 +405,7 @@ namespace Packages.IDE.Editor
 					return true;
 				}
 
-				var arguments = $"\"{projectDir}\"";
+				var arguments = $"\"{projectDir}\" --reuse-window";
 				if (hasGoto)
 				{
 					var gotoArg = column > 0
@@ -384,8 +413,23 @@ namespace Packages.IDE.Editor
 						: $"\"{trimmedPath}:{line}\"";
 					arguments += $" --goto {gotoArg}";
 				}
+				else if (hasFile)
+				{
+					arguments += $" --goto \"{trimmedPath}\"";
+				}
 
-				var binProc = Process.Start(editorPath, arguments);
+				// Use CLI script (.cmd) if available to avoid blocking on WaitForExit.
+				// Use ProcessStartInfo with CreateNoWindow to hide the console window.
+				var launchPath = GetPreferredEditorPath(editorPath);
+
+				var startInfo = new ProcessStartInfo
+				{
+					FileName = launchPath,
+					Arguments = arguments,
+					CreateNoWindow = true,
+					UseShellExecute = false
+				};
+				var binProc = Process.Start(startInfo);
 				binProc?.WaitForExit(5000);
 				return binProc?.ExitCode == 0;
 			}
