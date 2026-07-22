@@ -1,6 +1,6 @@
 # com.gamiable.unity-ide — IDE Editor for Unity
 
-Forked from `com.unity.ide.rider` (v3.0.40) and adapted for multi-editor support: **VS Code, Cursor, Windsurf, Antigravity, Zed, Neovim**.
+Forked from `com.unity.ide.rider` (v3.0.40) and adapted for multi-editor support: **VS Code, Cursor, Antigravity IDE, Zed**.
 
 Package name: `com.gamiable.unity-ide`. Host on your own UPM registry — the `com.unity.*` namespace is reserved.
 
@@ -53,7 +53,7 @@ Create these from scratch:
 
 **`IDEDiscovery.cs`** — Editor discovery replacing the native `JetBrains.Rider.PathLocator.dll`:
 
-- Scans `PATH` + known install directories for `code`, `cursor`, `windsurf`, `antigravity`, `zed`, `nv`
+- Scans `PATH` + known install directories for `code`, `cursor`, `Electron` (Antigravity IDE), `zed`
 - Validates each candidate via `{path} --version`
 - Platform-specific known locations:
   - macOS: `/Applications/`
@@ -108,25 +108,15 @@ Search and replace remaining references:
 
 Extend `IDEDiscovery.cs` to support additional editors:
 
-- Added `zed`, `nv` to editor names and display names arrays
-- Added `GetMacAppName` cases for Zed, Neovim
+- Added `zed` to editor names and display names arrays
+- Added `GetMacAppName` cases for Zed
 - Added known locations for macOS and Linux
 - Extended `IsSupportedInstallation` to recognize new editor prefixes
 - Extended `GetEditorDisplayName` for new editor display names
 
-### Phase 9: Neovim Project File
+### Phase 9: macOS .app Bundle Validation
 
-Added `.nvproj` generation for Neovim users:
-
-- New `GenerateNvproj()` method in `ProjectGeneration.cs`
-- Called from `GenerateAndWriteSolutionAndProjects()`
-- Creates `.nvproj` with `features.unity = true` and file/directory exclusions matching Unity project patterns
-- `.vscode/settings.json` generation is skipped when Neovim is the active editor (`.nvproj` serves the equivalent purpose)
-- Files are generated once — if they already exist, subsequent syncs leave them untouched
-
-### Phase 10: macOS .app Bundle Validation
-
-**Problem:** `ValidateEditor` resolved `.app` bundles to their internal binary (via `GetMacExecutablePath`) and ran `--version` on it. For Electron-based editors (Cursor, Windsurf, Antigravity), this launched the GUI instead of printing version info. `StandardOutput.ReadToEnd()` blocked until each editor was closed, causing sequential opens of all discovered editors.
+**Problem:** `ValidateEditor` resolved `.app` bundles to their internal binary (via `GetMacExecutablePath`) and ran `--version` on it. For Electron-based editors (Cursor, Antigravity IDE), this launched the GUI instead of printing version info. `StandardOutput.ReadToEnd()` blocked until each editor was closed, causing sequential opens of all discovered editors.
 
 **Fix:** `.app` bundles now skip `--version` validation entirely — existence in `/Applications/` is sufficient:
 
@@ -137,27 +127,7 @@ if (path.EndsWith(".app", StringComparison.OrdinalIgnoreCase))
 
 `GetMacExecutablePath` is retained for `OpenFileInIDE` usage (where we need the internal binary for CLI arguments).
 
-### Phase 11: Editor Name Convention
-
-**Problem:** The macOS `.app` bundle `Neovim.app` does NOT start with the prefix `"nv"`. `"Neovim.app".StartsWith("nv")` = `false` because "Neovim" begins with "Neo", not "Nv". This caused `IsSupportedInstallation` and `GetEditorDisplayName` to miss Neovim.app when it was browsed as the external editor.
-
-**Canonical naming:**
-
-| Use | Search name | macOS .app name | Filename match |
-|-----|-------------|-----------------|----------------|
-| `EditorNames` (discovery loop) | `"nv"` | maps to `"Neovim"` via `GetMacAppName` | `"Neovim.app"` |
-| `IsSupportedInstallation` prefix check | `"neovim"` then `"nv"` | `"Neovim.app".StartsWith("neovim")` = true | binary `"nv"`.`StartsWith("nv")` = true |
-| `GetEditorDisplayName` prefix check | `"neovim"` then `"nv"` | returns `"Neovim"` | returns `"Neovim"` |
-| Project generation guards | `"nv"` | `ExecutableStartsWithAny(path, "nv")` | matches `.app` and binary |
-
-`GetMacAppName` maps any of these search names to the actual macOS app name:
-```csharp
-case "nv": return "Neovim";  // /Applications/Neovim.app
-```
-
-`FindEditorPaths` for `"nv"` searches only for `"nv"` — no `nvim` or `neovim` searches (user's Neovim is custom, not the standard distribution).
-
-### Phase 12: File Opening Behavior
+### Phase 10: File Opening Behavior
 
 **Problem:** `OpenFileInIDE` required `line > 0` to construct a `--goto` argument. Unity sometimes passes `line = 0` when opening a file without a specific line offset, causing `hasGoto` to be false and dropping the file path entirely — the editor would open with just the project directory.
 
@@ -175,9 +145,9 @@ var hasGoto = !string.IsNullOrEmpty(trimmedPath);
 | **Open C# Project** (no file) | `open -a "/App.app" "/projectDir"` | `executable "/projectDir"` |
 | **Double-click script** (has file) | `executablePath "/projectDir" --goto "file.cs:line"` | `executable "/projectDir" --goto "file.cs:line"` |
 
-The `--goto` flag is the standard VS Code convention, supported by all editors (the user's custom Neovim binary also accepts it).
+The `--goto` flag is the standard VS Code convention, supported by all editors.
 
-### Phase 13: Discovery Enhancements
+### Phase 11: Discovery Enhancements
 
 Changes to `IDEDiscovery.cs` beyond the initial implementation:
 
@@ -186,7 +156,7 @@ Changes to `IDEDiscovery.cs` beyond the initial implementation:
 - **No special-case searches**: `FindEditorPaths` has no additional binary name lookups — each editor searches only its canonical name
 - **Consistent prefix matching**: `IsSupportedInstallation` and `GetEditorDisplayName` are duplicated in both `IDEDiscovery.cs` and `IDEScriptEditor.cs` with identical prefix lists
 
-### Phase 14: Code Quality Cleanup
+### Phase 12: Code Quality Cleanup
 
 - Removed commented-out dead code block in `ProjectGeneration.GetAdditionalAssets()` (folder handling inherited from upstream)
 - `IDESettings.cs` keywords reordered: `"IDE"` first, editors in consistent order
@@ -196,10 +166,10 @@ Changes to `IDEDiscovery.cs` beyond the initial implementation:
 
 ```csharp
 // macOS (app bundle, no file — "Open C# Project"):
-open -a "/Applications/Antigravity.app" "/project/root"
+open -a "/Applications/Antigravity IDE.app" "/project/root"
 
 // macOS (app bundle, has file — double-click):
-/Applications/Antigravity.app/Contents/MacOS/Electron "/project/root" --goto "Assets/MyScript.cs:42:10"
+/Applications/Antigravity\ IDE.app/Contents/MacOS/Electron "/project/root" --goto "Assets/MyScript.cs:42:10"
 
 // Windows/Linux (PATH binary):
 code "/project/root" --goto "Assets/MyScript.cs:42:10"

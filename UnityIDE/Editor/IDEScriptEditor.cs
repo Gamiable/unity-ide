@@ -27,10 +27,8 @@ namespace Packages.IDE.Editor
 			{ "Visual Studio Code", "Visual Studio Code" },
 			{ "Visual Studio Code - Insiders", "VS Code Insiders" },
 			{ "Cursor", "Cursor" },
-			{ "Windsurf", "Windsurf" },
-			{ "Antigravity", "Antigravity" },
+			{ "Antigravity IDE", "Antigravity IDE" },
 			{ "Zed", "Zed" },
-			{ "Neovim", "Neovim" },
 		};
 
 		static IDEScriptEditor()
@@ -325,27 +323,6 @@ namespace Packages.IDE.Editor
 
 				if (editorPath.EndsWith(".app", StringComparison.OrdinalIgnoreCase))
 				{
-					if (ExecutableStartsWithAny(editorPath, "neovim", "nv"))
-					{
-						var executablePath = GetMacExecutablePath(editorPath);
-						var args = $"\"{projectDir}\" --reuse-window";
-						if (hasGoto)
-						{
-							var gotoArg = column > 0
-								? $"\"{trimmedPath}:{line}:{column}\""
-								: $"\"{trimmedPath}:{line}\"";
-							args += $" --goto {gotoArg}";
-						}
-						else if (hasFile)
-						{
-							args += $" --goto \"{trimmedPath}\"";
-						}
-
-						var proc = Process.Start(executablePath, args);
-						proc?.WaitForExit(5000);
-						return proc?.ExitCode == 0;
-					}
-
 					string openArgs;
 					if (hasGoto)
 					{
@@ -552,7 +529,7 @@ namespace Packages.IDE.Editor
 				return MacAppToDisplayName.ContainsKey(appName);
 			}
 
-			return ExecutableStartsWithAny(path, "code", "cursor", "windsurf", "antigravity", "zed", "neovim", "nv");
+			return ExecutableStartsWithAny(path, "code", "cursor", "Electron", "zed");
 		}
 
 		public static bool ExecutableStartsWithAny(string path, params string[] names)
@@ -580,14 +557,11 @@ namespace Packages.IDE.Editor
 			var fileInfo = new FileInfo(path);
 			var filename = fileInfo.Name;
 
-			if (filename.StartsWith("antigravity", StringComparison.OrdinalIgnoreCase)) return "Antigravity";
-			if (filename.StartsWith("windsurf", StringComparison.OrdinalIgnoreCase)) return "Windsurf";
+			if (filename.StartsWith("Electron", StringComparison.OrdinalIgnoreCase)) return "Antigravity IDE";
 			if (filename.StartsWith("cursor", StringComparison.OrdinalIgnoreCase)) return "Cursor";
 			if (filename.StartsWith("code-insiders", StringComparison.OrdinalIgnoreCase)) return "VS Code Insiders";
 			if (filename.StartsWith("code", StringComparison.OrdinalIgnoreCase)) return "Visual Studio Code";
 			if (filename.StartsWith("zed", StringComparison.OrdinalIgnoreCase)) return "Zed";
-			if (filename.StartsWith("neovim", StringComparison.OrdinalIgnoreCase)) return "Neovim";
-			if (filename.StartsWith("nv", StringComparison.OrdinalIgnoreCase)) return "Neovim";
 
 			return "IDE Editor";
 		}

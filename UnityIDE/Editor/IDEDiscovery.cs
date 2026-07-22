@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using Packages.IDE.Editor.Util;
 using Unity.CodeEditor;
-using Debug = UnityEngine.Debug;
 using OperatingSystemFamily = UnityEngine.OperatingSystemFamily;
 
 namespace Packages.IDE.Editor
@@ -17,10 +16,10 @@ namespace Packages.IDE.Editor
 
 	internal class IDEDiscovery : IDiscovery
 	{
-		private static readonly string[] EditorNames = { "code", "cursor", "windsurf", "antigravity", "zed", "nv" };
+		private static readonly string[] EditorNames = { "code", "cursor", "antigravity", "zed" };
 
 		private static readonly string[] EditorDisplayNames = {
-			"Visual Studio Code", "Cursor", "Windsurf", "Antigravity", "Zed", "Neovim"
+			"Visual Studio Code", "Cursor", "Antigravity IDE", "Zed"
 		};
 
 		private static readonly Dictionary<string, string> MacAppToDisplayName = new(StringComparer.OrdinalIgnoreCase)
@@ -28,10 +27,8 @@ namespace Packages.IDE.Editor
 			{ "Visual Studio Code", "Visual Studio Code" },
 			{ "Visual Studio Code - Insiders", "VS Code Insiders" },
 			{ "Cursor", "Cursor" },
-			{ "Windsurf", "Windsurf" },
-			{ "Antigravity", "Antigravity" },
+			{ "Antigravity IDE", "Antigravity IDE" },
 			{ "Zed", "Zed" },
-			{ "Neovim", "Neovim" },
 		};
 
 		public CodeEditor.Installation[] PathCallback()
@@ -148,11 +145,9 @@ namespace Packages.IDE.Editor
 				case "code": return "Visual Studio Code";
 				case "code-insiders": return "Visual Studio Code - Insiders";
 				case "cursor": return "Cursor";
-				case "windsurf": return "Windsurf";
-				case "antigravity": return "Antigravity";
-			case "zed": return "Zed";
-			case "nv": return "Neovim";
-			default: return editorName;
+				case "antigravity": return "Antigravity IDE";
+				case "zed": return "Zed";
+				default: return editorName;
 			}
 		}
 
@@ -162,7 +157,6 @@ namespace Packages.IDE.Editor
 			{
 				case "code": return "Microsoft VS Code";
 				case "cursor": return "Cursor";
-				case "windsurf": return "Windsurf";
 				default: return editorName;
 			}
 		}
@@ -210,7 +204,7 @@ namespace Packages.IDE.Editor
 			}
 
 			var filename = System.IO.Path.GetFileName(path);
-			var names = new[] { "code", "cursor", "windsurf", "antigravity", "zed", "neovim", "nv" };
+			var names = new[] { "code", "cursor", "antigravity", "zed" };
 			foreach (var name in names)
 			{
 				if (filename.StartsWith(name, StringComparison.OrdinalIgnoreCase))
@@ -231,14 +225,11 @@ namespace Packages.IDE.Editor
 
 			var filename = System.IO.Path.GetFileName(path);
 
-			if (filename.StartsWith("antigravity", StringComparison.OrdinalIgnoreCase)) return "Antigravity";
-			if (filename.StartsWith("windsurf", StringComparison.OrdinalIgnoreCase)) return "Windsurf";
+			if (filename.StartsWith("antigravity", StringComparison.OrdinalIgnoreCase)) return "Antigravity IDE";
 			if (filename.StartsWith("cursor", StringComparison.OrdinalIgnoreCase)) return "Cursor";
 			if (filename.StartsWith("code-insiders", StringComparison.OrdinalIgnoreCase)) return "VS Code Insiders";
 			if (filename.StartsWith("code", StringComparison.OrdinalIgnoreCase)) return "Visual Studio Code";
 			if (filename.StartsWith("zed", StringComparison.OrdinalIgnoreCase)) return "Zed";
-			if (filename.StartsWith("neovim", StringComparison.OrdinalIgnoreCase)) return "Neovim";
-			if (filename.StartsWith("nv", StringComparison.OrdinalIgnoreCase)) return "Neovim";
 
 			return "IDE Editor";
 		}
